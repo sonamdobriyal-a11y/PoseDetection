@@ -46,40 +46,72 @@ def video_feed():
 def upload_video():
     global pose_detector, reference_sequence, total_frames
     
-    if 'video' not in request.files:
-        return 'No video file uploaded', 400
+    try:
+        if 'video' not in request.files:
+            return 'No video file uploaded', 400
+            
+        video_file = request.files['video']
+        if video_file.filename == '':
+            return 'No selected file', 400
+            
+        # Create uploads directory if it doesn't exist
+        os.makedirs('uploads', exist_ok=True)
         
-    video_file = request.files['video']
-    if video_file.filename == '':
-        return 'No selected file', 400
+        # Save the uploaded video temporarily with original filename
+        temp_path = os.path.join('uploads', 'temp_' + video_file.filename)
+        video_file.save(temp_path)
         
-    # Save the uploaded video temporarily
-    temp_path = 'temp_video.mp4'
-    video_file.save(temp_path)
-    
-    # Initialize pose detector if not already done
-    if pose_detector is None:
-        pose_detector = PoseSimilarity()
-    
-    # Process the reference video
-    ref_cap = cv2.VideoCapture(temp_path)
-    total_frames = int(ref_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
-    reference_sequence = []
-    while True:
-        ret, ref_frame = ref_cap.read()
-        if not ret:
-            break
-        landmarks = pose_detector.extract_landmarks(ref_frame)
-        reference_sequence.append(landmarks)
-    
-    ref_cap.release()
-    
-    # Clean up
-    if os.path.exists(temp_path):
-        os.remove(temp_path)
-    
-    return 'Video processed successfully', 200
+        print(f"Video saved to {temp_path}")
+        
+        # Initialize pose detector if not already done
+        if pose_detector is None:
+            print("Initializing pose detector...")
+            pose_detector = PoseSimilarity()
+        
+        # Process the reference video
+        print("Opening video file...")
+        ref_cap = cv2.VideoCapture(temp_path)
+        if not ref_cap.isOpened():
+            return f'Error: Could not open video file {temp_path}', 400
+            
+        total_frames = int(ref_cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        print(f"Total frames in video: {total_frames}")
+        
+        reference_sequence = []
+        frame_count = 0
+        while True:
+            ret, ref_frame = ref_cap.read()
+            if not ret:
+                break
+            
+            try:
+                landmarks = pose_detector.extract_landmarks(ref_frame)
+                reference_sequence.append(landmarks)
+                frame_count += 1
+                if frame_count % 30 == 0:  # Print progress every 30 frames
+                    print(f"Processed {frame_count} frames...")
+            except Exception as e:
+                print(f"Error processing frame {frame_count}: {str(e)}")
+                
+        print(f"Finished processing {frame_count} frames")
+        ref_cap.release()
+        
+        # Clean up
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+            print(f"Removed temporary file {temp_path}")
+        
+        if len(reference_sequence) == 0:
+            return 'Error: No valid poses detected in the video', 400
+            
+        return 'Video processed successfully', 200
+        
+    except Exception as e:
+        print(f"Error processing video: {str(e)}")
+        # Clean up in case of error
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.remove(temp_path)
+        return f'Error processing video: {str(e)}', 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

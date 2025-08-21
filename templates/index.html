@@ -71,14 +71,16 @@
                     body: formData
                 });
                 
+                const responseText = await response.text();
                 if (response.ok) {
                     alert('Video processed successfully!');
                 } else {
-                    alert('Error processing video');
+                    alert(`Error: ${responseText}`);
+                    console.error('Server error:', responseText);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error uploading video');
+                alert('Error uploading video: ' + error.message);
             }
         };
     </script>
