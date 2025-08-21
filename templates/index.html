@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pose Similarity Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .video-container {
+            margin-top: 20px;
+        }
+        .video-feed {
+            max-width: 100%;
+            border: 3px solid #333;
+            border-radius: 10px;
+        }
+        .upload-form {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .upload-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .upload-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pose Similarity Detection</h1>
+        
+        <div class="upload-form">
+            <h2>Upload Reference Video</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="video" accept="video/*" required>
+                <button type="submit" class="upload-btn">Upload and Process</button>
+            </form>
+        </div>
+
+        <div class="video-container">
+            <img src="{{ url_for('video_feed') }}" class="video-feed">
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert('Video processed successfully!');
+                } else {
+                    alert('Error processing video');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error uploading video');
+            }
+        };
+    </script>
+</body>
+</html>
