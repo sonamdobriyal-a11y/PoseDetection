@@ -8,5 +8,3 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.12
-      - key: PORT
-        value: 5000
